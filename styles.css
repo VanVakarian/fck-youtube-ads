@@ -1,0 +1,11 @@
+body {
+  margin: 0px;
+  padding: 0px;
+}
+
+#checkbox {
+  margin: 0px;
+  width: 60px;
+  height: 60px;
+  transform: scale(1.1);
+}
