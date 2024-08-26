@@ -1,25 +1,48 @@
-function findAndClickSkipButton() {
-  const button = document.querySelector('.ytp-skip-ad-button');
-  if (button) button.click();
+function muteVideo() {
+  const video = document.querySelector('video');
+  if (video) {
+    if (!video.muted) {
+      video.muted = true;
+    }
+  } else {
+    console.log('Video element not found');
+  }
+}
+
+function unmuteVideo() {
+  const video = document.querySelector('video');
+  if (video) {
+    if (video.muted) {
+      video.muted = false;
+    }
+  } else {
+    console.log('Video element not found');
+  }
+}
+
+function checkForAdAndMute() {
+  const countdownButton = document.querySelector('.ytp-preview-ad:not([style*="display: none"])');
+  if (countdownButton) {
+    muteVideo();
+  } else {
+    unmuteVideo();
+  }
 }
 
 function startMonitoring() {
   if (!window.observer) {
     const lastInvocationTime = { value: 0 };
-
     const observer = new MutationObserver(() => {
       const currentTime = Date.now();
       if (currentTime - lastInvocationTime.value > 1000) {
-        findAndClickSkipButton();
+        checkForAdAndMute();
         lastInvocationTime.value = currentTime;
       }
     });
-
     observer.observe(document.body, {
       childList: true,
       subtree: true,
     });
-
     window.observer = observer;
   }
 }
