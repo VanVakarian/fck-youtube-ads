@@ -21,8 +21,9 @@ function unmuteVideo() {
 }
 
 function checkForAdAndMute() {
+  const skipButton = document.querySelector('.ytp-skip-ad-button:not([style*="display: none"])');
   const countdownButton = document.querySelector('.ytp-preview-ad:not([style*="display: none"])');
-  if (countdownButton) {
+  if (skipButton || countdownButton) {
     muteVideo();
   } else {
     unmuteVideo();
@@ -34,7 +35,7 @@ function startMonitoring() {
     const lastInvocationTime = { value: 0 };
     const observer = new MutationObserver(() => {
       const currentTime = Date.now();
-      if (currentTime - lastInvocationTime.value > 1000) {
+      if (currentTime - lastInvocationTime.value > 100) {
         checkForAdAndMute();
         lastInvocationTime.value = currentTime;
       }
