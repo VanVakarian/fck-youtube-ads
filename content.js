@@ -21,9 +21,10 @@ function unmuteVideo() {
 }
 
 function checkForAdAndMute() {
-  const skipButton = document.querySelector('.ytp-skip-ad-button:not([style*="display: none"])');
-  const countdownButton = document.querySelector('.ytp-preview-ad:not([style*="display: none"])');
-  if (skipButton || countdownButton) {
+  const sponsoredLabel = document.querySelector(
+    'div.ytp-ad-player-overlay-layout__ad-info-container:not([style*="display: none"])'
+  );
+  if (sponsoredLabel) {
     muteVideo();
   } else {
     unmuteVideo();
