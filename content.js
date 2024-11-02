@@ -20,12 +20,17 @@ function unmuteVideo() {
   }
 }
 
+function simulateClick() {
+  chrome.runtime.sendMessage({ action: 'clickSkipButton' });
+}
+
 function checkForAdAndMute() {
   const sponsoredLabel = document.querySelector(
     'div.ytp-ad-player-overlay-layout__ad-info-container:not([style*="display: none"])'
   );
   if (sponsoredLabel) {
     muteVideo();
+    simulateClick();
   } else {
     unmuteVideo();
   }
@@ -41,11 +46,20 @@ function startMonitoring() {
         lastInvocationTime.value = currentTime;
       }
     });
+
     observer.observe(document.body, {
       childList: true,
       subtree: true,
     });
     window.observer = observer;
+
+    if (!window.skipButtonInterval) {
+      window.skipButtonInterval = setInterval(() => {
+        if (document.querySelector('video')?.muted) {
+          simulateClick();
+        }
+      }, 1000);
+    }
   }
 }
 
@@ -53,6 +67,10 @@ function stopMonitoring() {
   if (window.observer) {
     window.observer.disconnect();
     window.observer = null;
+  }
+  if (window.skipButtonInterval) {
+    clearInterval(window.skipButtonInterval);
+    window.skipButtonInterval = null;
   }
 }
 
