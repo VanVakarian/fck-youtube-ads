@@ -1,6 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Fck youtube ads",
+  "description": "Youtube ad skipper",
   "version": "0.2",
   "permissions": [
     "activeTab",
@@ -11,6 +12,9 @@
   "host_permissions": [
     "https://www.youtube.com/*"
   ],
+  "action": {
+    "default_popup": "popup.html"
+  },
   "background": {
     "service_worker": "background.js"
   },
@@ -27,10 +31,15 @@
       ]
     }
   ],
-  "action": {
-    "default_popup": "popup.html"
-  },
   "icons": {
     "128": "images/logo.png"
-  }
+  },
+  "commands": {},
+  "externally_connectable": {
+    "matches": [
+      "https://www.youtube.com/*"
+    ]
+  },
+  "options_page": "",
+  "web_accessible_resources": []
 }

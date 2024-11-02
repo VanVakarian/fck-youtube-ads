@@ -11,17 +11,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (tabs[0] && /^https:\/\/www\.youtube\.com/.test(tabs[0].url)) {
-        chrome.scripting.executeScript(
-          {
-            target: { tabId: tabs[0].id },
-            files: ['content.js'],
-          },
-          () => {
-            chrome.tabs.sendMessage(tabs[0].id, {
-              action: isMonitoring ? 'start' : 'stop',
-            });
-          }
-        );
+        chrome.tabs.sendMessage(tabs[0].id, {
+          action: isMonitoring ? 'start' : 'stop',
+        });
       }
     });
   });
