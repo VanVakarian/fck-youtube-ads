@@ -1,3 +1,15 @@
+function throttle(func, limit) {
+  let lastRun = 0;
+
+  return function () {
+    const now = Date.now();
+    if (now - lastRun >= limit) {
+      func();
+      lastRun = now;
+    }
+  };
+}
+
 const VIDEO_STATE = {
   VIDEO: 'VIDEO',
   AD: 'AD',
@@ -27,9 +39,10 @@ function sendSkipButtonCommand() {
   }
 }
 
-function handleAd() {
+async function handleAd() {
   const sponsoredLabel = document.querySelector('div.ytp-ad-player-overlay-layout__ad-info-container:not([style*="display: none"])'); // prettier-ignore
   const skipButton = document.querySelector('.ytp-skip-ad-button:not([style*="display: none"])');
+  if (!sponsoredLabel && !skipButton) return;
 
   if (sponsoredLabel && currentState === VIDEO_STATE.VIDEO) {
     muteVideo();
@@ -49,9 +62,8 @@ function handleAd() {
 function startMonitoring() {
   if (window.observer) return;
 
-  const observer = new MutationObserver(() => {
-    handleAd();
-  });
+  const throttledHandleAd = throttle(handleAd, 100);
+  const observer = new MutationObserver(throttledHandleAd);
 
   observer.observe(document.body, {
     childList: true,
@@ -79,11 +91,14 @@ chrome.storage.local.get(['isMonitoring'], (result) => {
 });
 
 chrome.runtime.onMessage.addListener((request) => {
-  if (request.action === 'start') {
-    startMonitoring();
-  } else if (request.action === 'stop') {
-    stopMonitoring();
-  } else {
-    console.error('Unknown action:', request.action);
+  switch (request.action) {
+    case 'start':
+      startMonitoring();
+      break;
+    case 'stop':
+      stopMonitoring();
+      break;
+    default:
+      console.error('Unknown action:', request.action);
   }
 });

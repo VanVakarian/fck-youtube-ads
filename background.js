@@ -1,5 +1,8 @@
 const tabsWithDebuggerAttached = new Map();
-const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 async function attachDebugger(tabId) {
   if (tabsWithDebuggerAttached.get(tabId)) return;
@@ -67,11 +70,6 @@ async function simulateMouseClick(tabId, coordinates) {
     },
   ];
 
-  // simulating average human click duration
-  const MOUSE_PRESS_MIN = 50;
-  const MOUSE_PRESS_MAX = 150;
-  const pressDuration = Math.floor(Math.random() * (MOUSE_PRESS_MAX - MOUSE_PRESS_MIN + 1)) + MOUSE_PRESS_MIN;
-
   for (const event of clickEvents) {
     await chrome.debugger.sendCommand({ tabId }, 'Input.dispatchMouseEvent', {
       ...event,
@@ -80,6 +78,10 @@ async function simulateMouseClick(tabId, coordinates) {
     });
 
     if (event.type === 'mousePressed') {
+      // simulating average human click duration
+      const MOUSE_PRESS_MIN = 50;
+      const MOUSE_PRESS_MAX = 150;
+      const pressDuration = Math.floor(Math.random() * (MOUSE_PRESS_MAX - MOUSE_PRESS_MIN + 1)) + MOUSE_PRESS_MIN;
       await wait(pressDuration);
     }
   }
