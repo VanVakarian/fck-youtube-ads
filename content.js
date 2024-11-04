@@ -27,7 +27,7 @@ function sendSkipButtonCommand() {
   }
 }
 
-function checkForAdAndSkipButton() {
+function handleAd() {
   const sponsoredLabel = document.querySelector('div.ytp-ad-player-overlay-layout__ad-info-container:not([style*="display: none"])'); // prettier-ignore
   const skipButton = document.querySelector('.ytp-skip-ad-button:not([style*="display: none"])');
 
@@ -47,21 +47,19 @@ function checkForAdAndSkipButton() {
 }
 
 function startMonitoring() {
-  if (!window.observer) {
-    const observer = new MutationObserver(() => {
-      checkForAdAndSkipButton();
-    });
+  if (window.observer) return;
 
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      attributeFilter: ['style', 'class'],
-    });
-    window.observer = observer;
+  const observer = new MutationObserver(() => {
+    handleAd();
+  });
 
-    checkForAdAndSkipButton();
-  }
+  observer.observe(document.body, {
+    childList: true,
+    subtree: true,
+    attributes: true,
+    attributeFilter: ['style', 'class'],
+  });
+  window.observer = observer;
 }
 
 function stopMonitoring() {
@@ -85,5 +83,7 @@ chrome.runtime.onMessage.addListener((request) => {
     startMonitoring();
   } else if (request.action === 'stop') {
     stopMonitoring();
+  } else {
+    console.error('Unknown action:', request.action);
   }
 });
