@@ -92,19 +92,23 @@ async function handleSkipButtonClick(tabId) {
     await attachDebugger(tabId);
 
     // Adding random delay before click
-    const CLICK_DELAY_MIN = 200;
+    const CLICK_DELAY_MIN = 300;
     const CLICK_DELAY_MAX = 1000;
     const delayMs = Math.floor(Math.random() * (CLICK_DELAY_MAX - CLICK_DELAY_MIN + 1)) + CLICK_DELAY_MIN;
     await wait(delayMs);
 
     const coordinates = await findSkipButtonCoordinates(tabId);
-    if (!coordinates) return;
+    if (!coordinates) {
+      chrome.tabs.sendMessage(tabId, { action: 'skipButtonClickFailed' });
+      return;
+    }
 
     await simulateMouseClick(tabId, coordinates);
 
     await detachDebugger(tabId);
   } catch (error) {
     console.error('Skip button click error:', error);
+    chrome.tabs.sendMessage(tabId, { action: 'skipButtonClickFailed' });
   }
 }
 
