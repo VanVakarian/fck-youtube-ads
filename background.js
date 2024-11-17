@@ -1,31 +1,37 @@
-const tabsWithDebuggerAttached = new Map();
+const tabsWithDebuggerAttached = new Set();
 
 async function wait(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 async function attachDebugger(tabId) {
-  if (tabsWithDebuggerAttached.get(tabId)) return;
+  if (tabsWithDebuggerAttached.has(tabId)) return;
 
   try {
     await chrome.debugger.attach({ tabId }, '1.3');
-    tabsWithDebuggerAttached.set(tabId, true);
+    tabsWithDebuggerAttached.add(tabId);
+    return true;
   } catch (error) {
     if (error.message.includes('Already attached')) {
-      tabsWithDebuggerAttached.set(tabId, true);
+      tabsWithDebuggerAttached.add(tabId);
+      return true;
     } else {
-      throw error;
+      console.error('Error attaching debugger:', error);
+      return false;
     }
   }
 }
 
 async function detachDebugger(tabId) {
-  if (!tabsWithDebuggerAttached.get(tabId)) return;
+  if (!tabsWithDebuggerAttached.has(tabId)) return;
 
   try {
     await chrome.debugger.detach({ tabId });
-    tabsWithDebuggerAttached.set(tabId, false);
-  } catch (error) {}
+  } catch (error) {
+    console.error('Error detaching debugger:', error);
+  } finally {
+    tabsWithDebuggerAttached.delete(tabId);
+  }
 }
 
 async function findSkipButtonCoordinates(tabId) {
@@ -57,69 +63,93 @@ async function findSkipButtonCoordinates(tabId) {
 }
 
 async function simulateMouseClick(tabId, coordinates) {
-  const clickEvents = [
-    {
+  if (!coordinates || !tabsWithDebuggerAttached.has(tabId)) return false;
+
+  try {
+    await chrome.debugger.sendCommand({ tabId }, 'Input.dispatchMouseEvent', {
       type: 'mousePressed',
       button: 'left',
       clickCount: 1,
-    },
-    {
-      type: 'mouseReleased',
-      button: 'left',
-      clickCount: 1,
-    },
-  ];
-
-  for (const event of clickEvents) {
-    await chrome.debugger.sendCommand({ tabId }, 'Input.dispatchMouseEvent', {
-      ...event,
       x: coordinates.x,
       y: coordinates.y,
     });
 
-    if (event.type === 'mousePressed') {
-      // simulating average human click duration
-      const MOUSE_PRESS_MIN = 50;
-      const MOUSE_PRESS_MAX = 150;
-      const pressDuration = Math.floor(Math.random() * (MOUSE_PRESS_MAX - MOUSE_PRESS_MIN + 1)) + MOUSE_PRESS_MIN;
-      await wait(pressDuration);
-    }
+    // simulating average human click duration
+    const MOUSE_PRESS_MIN = 50;
+    const MOUSE_PRESS_MAX = 150;
+    const pressDuration = Math.floor(Math.random() * (MOUSE_PRESS_MAX - MOUSE_PRESS_MIN)) + MOUSE_PRESS_MIN;
+    await wait(pressDuration);
+
+    await chrome.debugger.sendCommand({ tabId }, 'Input.dispatchMouseEvent', {
+      type: 'mouseReleased',
+      button: 'left',
+      clickCount: 1,
+      x: coordinates.x,
+      y: coordinates.y,
+    });
+
+    return true;
+  } catch (error) {
+    console.error('Error simulating mouse click:', error);
+    return false;
+  }
+}
+
+async function notifyContentScript(tabId, isSuccess) {
+  try {
+    const message = isSuccess ? 'skipCompleted' : 'skipFailed';
+    await chrome.tabs.sendMessage(tabId, { action: message });
+  } catch (error) {
+    console.error('Error notifying content script:', error);
   }
 }
 
 async function handleSkipButtonClick(tabId) {
   try {
-    await attachDebugger(tabId);
+    const tab = await chrome.tabs.get(tabId);
+    if (!tab) {
+      await notifyContentScript(tabId, false);
+      return;
+    }
+
+    const debuggerAttached = await attachDebugger(tabId);
+    if (!debuggerAttached) {
+      await notifyContentScript(tabId, false);
+      return;
+    }
 
     // Adding random delay before click
     const CLICK_DELAY_MIN = 300;
     const CLICK_DELAY_MAX = 1000;
-    const delayMs = Math.floor(Math.random() * (CLICK_DELAY_MAX - CLICK_DELAY_MIN + 1)) + CLICK_DELAY_MIN;
-    await wait(delayMs);
+    const delayBeforeClickMs = Math.floor(Math.random() * (CLICK_DELAY_MAX - CLICK_DELAY_MIN + 1)) + CLICK_DELAY_MIN;
+    await wait(delayBeforeClickMs);
 
     const coordinates = await findSkipButtonCoordinates(tabId);
     if (!coordinates) {
-      chrome.tabs.sendMessage(tabId, { action: 'skipButtonClickFailed' });
+      await notifyContentScript(tabId, false);
       return;
     }
 
-    await simulateMouseClick(tabId, coordinates);
-
-    await detachDebugger(tabId);
+    const clickResult = await simulateMouseClick(tabId, coordinates);
+    await notifyContentScript(tabId, clickResult);
   } catch (error) {
-    console.error('Skip button click error:', error);
-    chrome.tabs.sendMessage(tabId, { action: 'skipButtonClickFailed' });
+    console.error('Error handling skip button click:', error);
+    await notifyContentScript(tabId, false);
+  } finally {
+    await detachDebugger(tabId);
   }
 }
 
 chrome.runtime.onMessage.addListener((request, sender) => {
-  if (request.action === 'clickSkipButton') {
-    const tab = sender.tab;
-    if (!tab?.id) return;
-    handleSkipButtonClick(tab.id);
+  if (request.action === 'clickSkipButton' && sender.tab?.id) {
+    handleSkipButtonClick(sender.tab.id);
   }
 });
 
 chrome.tabs.onRemoved.addListener((tabId) => {
+  tabsWithDebuggerAttached.delete(tabId);
+});
+
+chrome.debugger.onDetach.addListener(({ tabId }) => {
   tabsWithDebuggerAttached.delete(tabId);
 });

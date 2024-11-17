@@ -9,105 +9,73 @@ function throttle(func, limitMs) {
   };
 }
 
-function setDelayedExec(func, delayMs) {
-  setTimeout(() => func(), delayMs);
+const ENOUGH_TIME_TO_SKIP = 2000;
+
+let isSkippingInProcess = false;
+let skipRetryTimeout = null;
+
+function resetSkippingState() {
+  isSkippingInProcess = false;
+  if (skipRetryTimeout) {
+    clearTimeout(skipRetryTimeout);
+    skipRetryTimeout = null;
+  }
 }
 
-const VIDEO_STATE = {
-  VIDEO: 'VIDEO',
-  AD: 'AD',
-};
-
-let currentState = VIDEO_STATE.VIDEO;
-let isSkipButtonCommandSent = false;
-let lastAdDetectedTime = 0;
-
-function muteVideo() {
+function checkAndHandleAd() {
   const video = document.querySelector('video');
-  if (video && !video.muted) {
-    video.muted = true;
-  }
-}
+  if (!video) return;
 
-function unmuteVideo() {
-  const video = document.querySelector('video');
-  if (video && video.muted) {
-    video.muted = false;
-  }
-}
-
-function sendSkipButtonCommand() {
-  if (!isSkipButtonCommandSent) {
-    chrome.runtime.sendMessage({ action: 'clickSkipButton' });
-    isSkipButtonCommandSent = true;
-  }
-}
-
-async function handleAd() {
   const sponsoredLabel = document.querySelector('.ytp-ad-player-overlay-layout__ad-info-container:not([style*="display: none"])'); // prettier-ignore
   const skipButton = document.querySelector('.ytp-skip-ad-button:not([style*="display: none"])');
-  const now = Date.now();
-
-  if (!sponsoredLabel && !skipButton) {
-    if (currentState === VIDEO_STATE.AD) {
-      unmuteVideo();
-      setDelayedExec(unmuteVideo, 200);
-      currentState = VIDEO_STATE.VIDEO;
-      isSkipButtonCommandSent = false;
-      lastAdDetectedTime = 0;
-    }
-    return;
-  }
 
   if (sponsoredLabel) {
-    if (now - lastAdDetectedTime > 2000 || lastAdDetectedTime === 0) {
-      currentState = VIDEO_STATE.AD;
-      isSkipButtonCommandSent = false;
-      lastAdDetectedTime = now;
-      muteVideo();
-      setDelayedExec(muteVideo, 200);
-    }
+    video.muted = true;
+  } else {
+    video.muted = false;
   }
 
-  if (currentState === VIDEO_STATE.AD && skipButton && !isSkipButtonCommandSent) {
-    sendSkipButtonCommand();
-    // setTimeout(() => (isSkipButtonCommandSent = false), 1000);
+  if (skipButton && !isSkippingInProcess) {
+    isSkippingInProcess = true;
+    chrome.runtime.sendMessage({ action: 'clickSkipButton' });
+
+    skipRetryTimeout = setTimeout(() => {
+      resetSkippingState();
+    }, ENOUGH_TIME_TO_SKIP);
   }
 }
 
 function startMonitoring() {
-  if (window.observer) return;
+  if (window.adObserver) return;
 
-  const throttledHandleAd = throttle(handleAd, 100);
-  const observer = new MutationObserver(throttledHandleAd);
+  resetSkippingState(); // Сбрасываем состояние при старте
+  const throttledCheck = throttle(checkAndHandleAd, 100);
 
+  const observer = new MutationObserver(throttledCheck);
   observer.observe(document.body, {
     childList: true,
     subtree: true,
     attributes: true,
     attributeFilter: ['style', 'class'],
   });
-  window.observer = observer;
+
+  window.adObserver = observer;
+  checkAndHandleAd();
 }
 
 function stopMonitoring() {
-  if (window.observer) {
-    window.observer.disconnect();
-    window.observer = null;
+  if (window.adObserver) {
+    window.adObserver.disconnect();
+    window.adObserver = null;
   }
-  currentState = VIDEO_STATE.VIDEO;
-  isSkipButtonCommandSent = false;
-  lastAdDetectedTime = 0;
-  unmuteVideo();
+
+  const video = document.querySelector('video');
+  if (video) video.muted = false;
+
+  resetSkippingState();
 }
 
-chrome.storage.local.get(['isMonitoring'], (result) => {
-  if (result.isMonitoring) {
-    startMonitoring();
-  }
-});
-
-chrome.runtime.onMessage.addListener((request) => {
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   switch (request.action) {
     case 'start':
       startMonitoring();
@@ -117,11 +85,21 @@ chrome.runtime.onMessage.addListener((request) => {
       stopMonitoring();
       break;
 
-    case 'skipButtonClickFailed':
-      isSkipButtonCommandSent = false;
+    case 'skipCompleted':
+      resetSkippingState();
+      break;
+
+    case 'skipFailed':
+      resetSkippingState();
       break;
 
     default:
       console.error('Unknown action:', request.action);
+  }
+});
+
+chrome.storage.local.get(['isMonitoring'], (result) => {
+  if (result.isMonitoring) {
+    startMonitoring();
   }
 });
