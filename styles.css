@@ -1,11 +1,90 @@
-body {
-  margin: 0px;
-  padding: 0px;
+/* Main popup container */
+.popup-container {
+  width: 200px;
+  padding: 15px;
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 }
 
-#checkbox {
-  margin: 0px;
+/* Switch section
+-------------------------------------------------- */
+.switch-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+/* Hide default checkbox */
+.switch-input {
+  display: none;
+}
+
+/* Base switch style (background) */
+.switch {
+  position: relative;
+  display: flex;
   width: 60px;
-  height: 60px;
-  transform: scale(1.1);
+  height: 30px;
+  cursor: pointer;
+  background: #ff4d4d; /* Red in OFF state */
+  border-radius: 15px; /* Half the height for perfect circle */
+  transition: 0.2s;
+}
+
+/* Round switch handle */
+.switch-handle {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 26px;
+  height: 26px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  transition: 0.2s;
+}
+
+/* No animation upon openning page */
+.no-animation .switch-handle {
+  transition: none;
+}
+
+.no-animation .switch {
+  transition: none;
+}
+
+/* Switch active state */
+.switch-input:checked + .switch {
+  background: #4caf50; /* Green in ON state */
+}
+
+.switch-input:checked + .switch .switch-handle {
+  left: calc(100% - 28px); /* 60px (width) - 28px (handle width + padding) */
+}
+
+/* Press animations for both states */
+.switch:active .switch-handle {
+  width: 35px; /* Expand right in OFF state */
+}
+
+.switch-input:checked + .switch:active .switch-handle {
+  width: 35px;
+  left: calc(100% - 37px); /* Expand left in ON state */
+}
+
+/* Status text section
+-------------------------------------------------- */
+.status-text {
+  text-align: center;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Status text colors */
+.status-enabled {
+  color: #4caf50; /* Green = ON */
+}
+
+.status-disabled {
+  color: #ff4d4d; /* Red = OFF */
 }
