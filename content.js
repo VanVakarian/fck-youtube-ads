@@ -20,6 +20,7 @@ const VIDEO_STATE = {
 
 let currentState = VIDEO_STATE.VIDEO;
 let isSkipButtonCommandSent = false;
+let lastAdDetectedTime = 0;
 
 function muteVideo() {
   const video = document.querySelector('video');
@@ -45,20 +46,27 @@ function sendSkipButtonCommand() {
 async function handleAd() {
   const sponsoredLabel = document.querySelector('.ytp-ad-player-overlay-layout__ad-info-container:not([style*="display: none"])'); // prettier-ignore
   const skipButton = document.querySelector('.ytp-skip-ad-button:not([style*="display: none"])');
-  if (!sponsoredLabel && !skipButton) return;
+  const now = Date.now();
 
-  if (sponsoredLabel && currentState === VIDEO_STATE.VIDEO) {
-    muteVideo();
-    setDelayedExec(muteVideo, 100); // in case of failing to mute try again
-    setDelayedExec(muteVideo, 300);
-    currentState = VIDEO_STATE.AD;
-    isSkipButtonCommandSent = false;
-  } else if (!sponsoredLabel && currentState === VIDEO_STATE.AD) {
-    unmuteVideo();
-    setDelayedExec(unmuteVideo, 100); // in case of failing to unmute try again
-    setDelayedExec(unmuteVideo, 300);
-    currentState = VIDEO_STATE.VIDEO;
-    isSkipButtonCommandSent = false;
+  if (!sponsoredLabel && !skipButton) {
+    if (currentState === VIDEO_STATE.AD) {
+      unmuteVideo();
+      setDelayedExec(unmuteVideo, 200);
+      currentState = VIDEO_STATE.VIDEO;
+      isSkipButtonCommandSent = false;
+      lastAdDetectedTime = 0;
+    }
+    return;
+  }
+
+  if (sponsoredLabel) {
+    if (now - lastAdDetectedTime > 2000 || lastAdDetectedTime === 0) {
+      currentState = VIDEO_STATE.AD;
+      isSkipButtonCommandSent = false;
+      lastAdDetectedTime = now;
+      muteVideo();
+      setDelayedExec(muteVideo, 200);
+    }
   }
 
   if (currentState === VIDEO_STATE.AD && skipButton && !isSkipButtonCommandSent) {
@@ -89,6 +97,7 @@ function stopMonitoring() {
   }
   currentState = VIDEO_STATE.VIDEO;
   isSkipButtonCommandSent = false;
+  lastAdDetectedTime = 0;
   unmuteVideo();
 }
 
