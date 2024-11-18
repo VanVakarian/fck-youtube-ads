@@ -28,12 +28,9 @@ function checkAndHandleAd() {
 
   const sponsoredLabel = document.querySelector('.ytp-ad-player-overlay-layout__ad-info-container:not([style*="display: none"])'); // prettier-ignore
   const skipButton = document.querySelector('.ytp-skip-ad-button:not([style*="display: none"])');
+  if (!sponsoredLabel && !skipButton) return;
 
-  if (sponsoredLabel) {
-    video.muted = true;
-  } else {
-    video.muted = false;
-  }
+  video.muted = sponsoredLabel ? true : false;
 
   if (skipButton && !isSkippingInProcess) {
     isSkippingInProcess = true;
@@ -48,8 +45,8 @@ function checkAndHandleAd() {
 function startMonitoring() {
   if (window.adObserver) return;
 
-  resetSkippingState(); // Сбрасываем состояние при старте
-  const throttledCheck = throttle(checkAndHandleAd, 100);
+  resetSkippingState();
+  const throttledCheck = throttle(checkAndHandleAd, 16);
 
   const observer = new MutationObserver(throttledCheck);
   observer.observe(document.body, {
