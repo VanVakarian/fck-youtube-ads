@@ -25,6 +25,8 @@ async function attachDebugger(tabId) {
 async function detachDebugger(tabId) {
   if (!tabsWithDebuggerAttached.has(tabId)) return;
 
+  await wait(500); // Waiting for any pending click simulation to complete
+
   try {
     await chrome.debugger.detach({ tabId });
   } catch (error) {
