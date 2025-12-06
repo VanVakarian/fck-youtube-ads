@@ -3,6 +3,9 @@ class PopupManager {
     this.toggle = document.getElementById('adBlockToggle');
     this.statusMessage = document.getElementById('statusMessage');
     this.container = document.querySelector('.popup-container');
+    this.slider = document.getElementById('transparencySlider');
+    this.sliderValue = document.getElementById('transparencyValue');
+    this.colorButtons = document.querySelectorAll('.color-btn');
 
     if (!this.toggle || !this.statusMessage || !this.container) {
       console.error('Required elements not found');
@@ -19,10 +22,14 @@ class PopupManager {
         this.container.classList.add('no-animation');
       }
 
-      const result = await chrome.storage.local.get(['isMonitoring']);
+      const result = await chrome.storage.local.get(['isMonitoring', 'adTransparency', 'overlayColor']);
       const isMonitoring = result.isMonitoring ?? false;
+      const transparency = result.adTransparency ?? 90;
+      const overlayColor = result.overlayColor ?? 'black';
 
       this.updateInterface(isMonitoring);
+      this.updateSlider(transparency);
+      this.updateColorButtons(overlayColor);
 
       setTimeout(() => {
         if (this.container) {
@@ -42,6 +49,89 @@ class PopupManager {
       const isChecked = event.target.checked;
       await this.handleStateChange(isChecked);
     });
+
+    if (this.slider) {
+      this.slider.addEventListener('input', (event) => {
+        const transparency = parseInt(event.target.value, 10);
+        this.updateSliderDisplay(transparency);
+        this.sendTransparencyToTab(transparency);
+      });
+
+      this.slider.addEventListener('change', async (event) => {
+        const transparency = parseInt(event.target.value, 10);
+        await chrome.storage.local.set({ adTransparency: transparency });
+      });
+    }
+
+    this.colorButtons.forEach((btn) => {
+      btn.addEventListener('click', async (event) => {
+        const color = event.target.dataset.color;
+        this.updateColorButtons(color);
+        this.sendColorToTab(color);
+        await chrome.storage.local.set({ overlayColor: color });
+      });
+    });
+  }
+
+  updateSlider(transparency) {
+    if (this.slider) {
+      this.slider.value = transparency;
+    }
+    this.updateSliderDisplay(transparency);
+  }
+
+  updateSliderDisplay(transparency) {
+    if (this.sliderValue) {
+      this.sliderValue.textContent = `${transparency}%`;
+    }
+  }
+
+  async sendTransparencyToTab(transparency) {
+    try {
+      const tabs = await chrome.tabs.query({
+        active: true,
+        currentWindow: true,
+        url: ['*://*.youtube.com/*'],
+      });
+
+      if (tabs[0]?.id) {
+        await chrome.tabs.sendMessage(tabs[0].id, {
+          action: 'updateTransparency',
+          transparency: transparency,
+        });
+      }
+    } catch (err) {
+      // Ignore errors when tab is not ready
+    }
+  }
+
+  updateColorButtons(activeColor) {
+    this.colorButtons.forEach((btn) => {
+      if (btn.dataset.color === activeColor) {
+        btn.classList.add('active');
+      } else {
+        btn.classList.remove('active');
+      }
+    });
+  }
+
+  async sendColorToTab(color) {
+    try {
+      const tabs = await chrome.tabs.query({
+        active: true,
+        currentWindow: true,
+        url: ['*://*.youtube.com/*'],
+      });
+
+      if (tabs[0]?.id) {
+        await chrome.tabs.sendMessage(tabs[0].id, {
+          action: 'updateOverlayColor',
+          color: color,
+        });
+      }
+    } catch (err) {
+      // Ignore errors when tab is not ready
+    }
   }
 
   async handleStateChange(isMonitoring) {

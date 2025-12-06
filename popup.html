@@ -7,7 +7,7 @@
         content="width=device-width, initial-scale=1.0">
   <title>YouTube Ad Skipper</title>
   <link rel="stylesheet"
-        href="styles.css">
+        href="popup.css">
 </head>
 
 <body class="popup-container">
@@ -24,6 +24,37 @@
 
   <div class="status-text">
     <span id="statusMessage">Ad Skipper is disabled</span>
+  </div>
+
+  <div class="slider-section">
+    <div class="slider-label">
+      <span>Transparency</span>
+      <span id="transparencyValue"
+            class="slider-value">90%</span>
+    </div>
+    <input type="range"
+           id="transparencySlider"
+           class="slider-input"
+           min="0"
+           max="100"
+           step="1"
+           value="90">
+
+    <div class="color-picker">
+      <span class="color-picker-label">Overlay color</span>
+      <div class="color-buttons">
+        <button type="button"
+                id="colorBlack"
+                class="color-btn color-btn-black active"
+                data-color="black">
+        </button>
+        <button type="button"
+                id="colorWhite"
+                class="color-btn color-btn-white"
+                data-color="white">
+        </button>
+      </div>
+    </div>
   </div>
 
   <script src="popup.js"></script>

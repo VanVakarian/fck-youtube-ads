@@ -5,8 +5,11 @@ A Chrome extension designed to enhance your YouTube viewing experience by automa
 ## Features
 
 - Automatic detection and skipping of video advertisements
+- Mutes audio during ads — no annoying sounds
+- Dims the video with customizable overlay while ads are playing
+- Adjustable transparency level (0-100%)
+- Choice of overlay color (black or white)
 - Works on all YouTube pages
-- Clean and minimal interface
 - No external dependencies
 - Lightweight and efficient
 

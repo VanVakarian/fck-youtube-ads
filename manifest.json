@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Fck youtube ads",
   "description": "Youtube ad skipper",
-  "version": "0.3",
+  "version": "0.4",
   "permissions": [
     "activeTab",
     "scripting",
@@ -27,7 +27,7 @@
         "content.js"
       ],
       "css": [
-        "styles.css"
+        "content.css"
       ]
     }
   ],
