@@ -80,6 +80,8 @@ function updateOverlayStyle(transparency, color) {
   }
 }
 
+let isAdCurrentlyPlaying = false;
+
 function checkAndHandleAd() {
   const video = document.querySelector('video');
   if (!video) return;
@@ -92,9 +94,19 @@ function checkAndHandleAd() {
   if (isAdPlaying) {
     video.muted = true;
     addAdOverlay();
+
+    if (!isAdCurrentlyPlaying) {
+      isAdCurrentlyPlaying = true;
+      chrome.runtime.sendMessage({ action: 'attachDebugger' });
+    }
   } else {
     video.muted = false;
     removeAdOverlay();
+
+    if (isAdCurrentlyPlaying) {
+      isAdCurrentlyPlaying = false;
+      chrome.runtime.sendMessage({ action: 'detachDebugger' });
+    }
   }
 
   if (skipButton && !isSkippingInProcess) {
