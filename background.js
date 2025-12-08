@@ -25,8 +25,6 @@ async function attachDebugger(tabId) {
 async function detachDebugger(tabId) {
   if (!tabsWithDebuggerAttached.has(tabId)) return;
 
-  await wait(500); // Waiting for any pending click simulation to complete
-
   try {
     await chrome.debugger.detach({ tabId });
   } catch (error) {
@@ -114,12 +112,10 @@ async function handleSkipButtonClick(tabId) {
       return;
     }
 
-    if (!tabsWithDebuggerAttached.has(tabId)) {
-      const debuggerAttached = await attachDebugger(tabId);
-      if (!debuggerAttached) {
-        await notifyContentScript(tabId, false);
-        return;
-      }
+    const debuggerAttached = await attachDebugger(tabId);
+    if (!debuggerAttached) {
+      await notifyContentScript(tabId, false);
+      return;
     }
 
     // Adding random delay before click
@@ -139,25 +135,14 @@ async function handleSkipButtonClick(tabId) {
   } catch (error) {
     console.error('Error handling skip button click:', error);
     await notifyContentScript(tabId, false);
+  } finally {
+    await detachDebugger(tabId);
   }
 }
 
 chrome.runtime.onMessage.addListener((request, sender) => {
-  const tabId = sender.tab?.id;
-  if (!tabId) return;
-
-  switch (request.action) {
-    case 'attachDebugger':
-      attachDebugger(tabId);
-      break;
-
-    case 'detachDebugger':
-      detachDebugger(tabId);
-      break;
-
-    case 'clickSkipButton':
-      handleSkipButtonClick(tabId);
-      break;
+  if (request.action === 'clickSkipButton' && sender.tab?.id) {
+    handleSkipButtonClick(sender.tab.id);
   }
 });
 
