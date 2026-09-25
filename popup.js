@@ -6,6 +6,10 @@ class PopupManager {
     this.slider = document.getElementById('transparencySlider');
     this.sliderValue = document.getElementById('transparencyValue');
     this.colorButtons = document.querySelectorAll('.color-btn');
+    this.debugToggle = document.getElementById('debugToggle');
+    this.debugSize = document.getElementById('debugSize');
+    this.debugDownloadButton = document.getElementById('debugDownload');
+    this.debugClearButton = document.getElementById('debugClear');
 
     if (!this.toggle || !this.statusMessage || !this.container) {
       console.error('Required elements not found');
@@ -22,7 +26,7 @@ class PopupManager {
         this.container.classList.add('no-animation');
       }
 
-      const result = await chrome.storage.local.get(['isMonitoring', 'adTransparency', 'overlayColor']);
+      const result = await chrome.storage.local.get(['isMonitoring', 'adTransparency', 'overlayColor', DEBUG_FLAG_KEY]);
       const isMonitoring = result.isMonitoring ?? false;
       const transparency = result.adTransparency ?? 90;
       const overlayColor = result.overlayColor ?? 'black';
@@ -30,6 +34,9 @@ class PopupManager {
       this.updateInterface(isMonitoring);
       this.updateSlider(transparency);
       this.updateColorButtons(overlayColor);
+      this.debugToggle.checked = result[DEBUG_FLAG_KEY] ?? false;
+      this.refreshDebugSize();
+      setInterval(() => this.refreshDebugSize(), 1000);
 
       setTimeout(() => {
         if (this.container) {
@@ -71,6 +78,54 @@ class PopupManager {
         await chrome.storage.local.set({ overlayColor: color });
       });
     });
+
+    this.debugToggle.addEventListener('change', (event) => {
+      chrome.storage.local.set({ [DEBUG_FLAG_KEY]: event.target.checked });
+    });
+
+    this.debugDownloadButton.addEventListener('click', () => this.downloadDebugLog());
+
+    this.debugClearButton.addEventListener('click', async () => {
+      await clearDebugLog();
+      await this.refreshDebugSize();
+    });
+  }
+
+  async refreshDebugSize() {
+    const bytes = await debugLogBytes();
+    this.debugSize.textContent = `Log: ${(bytes / 1024 / 1024).toFixed(2)} MB`;
+  }
+
+  // one JSON file, an entry per line so it can be read and grepped as text too
+  async downloadDebugLog() {
+    const [entries, settings] = await Promise.all([
+      readDebugEntries(),
+      chrome.storage.local.get(['isMonitoring', 'adTransparency', 'overlayColor']),
+    ]);
+
+    const report = {
+      extensionVersion: chrome.runtime.getManifest().version,
+      generatedAt: new Date().toISOString(),
+      userAgent: navigator.userAgent,
+      settings,
+      entryCount: entries.length,
+      fields: 'at: epoch ms; t: ms since the context started (page: since navigation start); src: page:<id> | bg',
+    };
+    const text = [
+      '{',
+      `"report": ${JSON.stringify(report)},`,
+      '"entries": [',
+      entries.map((entry) => JSON.stringify(entry)).join(',\n'),
+      ']',
+      '}',
+    ].join('\n');
+
+    const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `fck-youtube-ads-debug-${Date.now()}.json`;
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
   updateSlider(transparency) {

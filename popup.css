@@ -198,3 +198,37 @@
 .color-btn-white {
   background: #fff;
 }
+
+/* Debug log section
+-------------------------------------------------- */
+.debug-section {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+  font-size: 12px;
+  color: #666;
+}
+
+.debug-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.debug-size {
+  margin-top: 6px;
+}
+
+.debug-buttons {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.debug-btn {
+  flex: 1;
+  padding: 4px 0;
+  font-size: 12px;
+  cursor: pointer;
+}

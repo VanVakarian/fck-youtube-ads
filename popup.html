@@ -57,6 +57,25 @@
     </div>
   </div>
 
+  <div class="debug-section">
+    <label class="debug-toggle">
+      <input type="checkbox"
+             id="debugToggle">
+      <span>Collect debug logs</span>
+    </label>
+    <div id="debugSize"
+         class="debug-size">Log: 0.00 MB</div>
+    <div class="debug-buttons">
+      <button type="button"
+              id="debugDownload"
+              class="debug-btn">Download</button>
+      <button type="button"
+              id="debugClear"
+              class="debug-btn">Clear</button>
+    </div>
+  </div>
+
+  <script src="diagnostics.js"></script>
   <script src="popup.js"></script>
 </body>
 

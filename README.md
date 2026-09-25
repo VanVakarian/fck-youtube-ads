@@ -13,6 +13,10 @@ A Chrome extension designed to enhance your YouTube viewing experience by automa
 - No external dependencies
 - Lightweight and efficient
 
+## Debug logs
+
+Tick "Collect debug logs" in the popup: from then on every YouTube tab (and the service worker) records what it sees and does — page lifecycle, the `<video>` state and events, ad/dialog elements appearing in the DOM, the skip button's visibility and click target, input events with `isTrusted`, the page's network requests (paths only), tab events. "Download" saves everything as one JSON file, "Clear" empties the log. The log lives in `chrome.storage.local` and is kept under 8 MB (oldest entries go first). Nothing is recorded while the box is off.
+
 ## Installation
 
 1. Download or clone this repository
