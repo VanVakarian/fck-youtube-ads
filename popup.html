@@ -5,77 +5,237 @@
   <meta charset="UTF-8">
   <meta name="viewport"
         content="width=device-width, initial-scale=1.0">
-  <title>YouTube Ad Skipper</title>
+  <title>Fck YouTube Ads</title>
   <link rel="stylesheet"
         href="popup.css">
+  <script src="popup-width.js"></script>
 </head>
 
 <body class="popup-container">
-  <div class="switch-container">
-    <input type="checkbox"
-           id="adBlockToggle"
-           class="switch-input">
+  <header class="popup-header">
+    <svg class="popup-logo"
+         viewBox="0 0 28 20"
+         aria-hidden="true">
+      <rect width="28"
+            height="20"
+            rx="5"
+            fill="#f00" />
+      <path d="M11 5.5v9l8-4.5z"
+            fill="#fff" />
+    </svg>
+    <h1 class="popup-title">Fck YouTube Ads</h1>
+  </header>
 
-    <label for="adBlockToggle"
-           class="switch">
-      <span class="switch-handle" />
-    </label>
-  </div>
-
-  <div class="status-text">
-    <span id="statusMessage">Ad Skipper is disabled</span>
-  </div>
-
-  <div class="slider-section">
-    <div class="slider-label">
-      <span>Transparency</span>
-      <span id="transparencyValue"
-            class="slider-value">90%</span>
+  <section class="card">
+    <div class="card-header">
+      <div>
+        <h2 class="card-title">Ad skipper</h2>
+        <div id="statusMessage"
+             class="card-subtitle status-disabled">Disabled</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox"
+               id="adBlockToggle"
+               class="switch-input">
+        <span class="switch-track"><span class="switch-thumb"></span></span>
+      </label>
     </div>
-    <input type="range"
-           id="transparencySlider"
-           class="slider-input"
-           min="0"
-           max="100"
-           step="1"
-           value="90">
 
-    <div class="color-picker">
-      <span class="color-picker-label">Overlay color</span>
-      <div class="color-buttons">
+    <fieldset id="skipperBody"
+              class="card-body">
+      <div class="row">
+        <span class="row-label">Transparency</span>
+        <span id="transparencyValue"
+              class="row-value">90%</span>
+      </div>
+      <input type="range"
+             id="transparencySlider"
+             class="slider"
+             min="0"
+             max="100"
+             step="1"
+             value="90">
+
+      <div class="row">
+        <span class="row-label">Overlay color</span>
+        <div class="color-buttons">
+          <button type="button"
+                  id="colorBlack"
+                  class="color-btn color-btn-black active"
+                  data-color="black"
+                  title="Black"></button>
+          <button type="button"
+                  id="colorWhite"
+                  class="color-btn color-btn-white"
+                  data-color="white"
+                  title="White"></button>
+        </div>
+      </div>
+    </fieldset>
+  </section>
+
+  <section class="card">
+    <div class="card-header">
+      <h2 class="card-title">Hide elements</h2>
+      <div class="header-actions">
         <button type="button"
-                id="colorBlack"
-                class="color-btn color-btn-black active"
-                data-color="black">
-        </button>
-        <button type="button"
-                id="colorWhite"
-                class="color-btn color-btn-white"
-                data-color="white">
-        </button>
+                id="addRule"
+                class="btn-icon"
+                title="Add rule">+</button>
+        <label class="switch">
+          <input type="checkbox"
+                 id="hideToggle"
+                 class="switch-input">
+          <span class="switch-track"><span class="switch-thumb"></span></span>
+        </label>
       </div>
     </div>
-  </div>
 
-  <div class="debug-section">
-    <label class="debug-toggle">
-      <input type="checkbox"
-             id="debugToggle">
-      <span>Collect debug logs</span>
-    </label>
-    <div id="debugSize"
-         class="debug-size">Log: 0.00 MB</div>
-    <div class="debug-buttons">
+    <fieldset id="hideBody"
+              class="card-body">
+      <div class="row">
+        <span class="row-label">Apply after page load</span>
+        <span id="hideDelayValue"
+              class="row-value">5 s</span>
+      </div>
+      <input type="range"
+             id="hideDelaySlider"
+             class="slider"
+             min="0"
+             max="30"
+             step="1"
+             value="5">
+
+      <div class="row">
+        <span class="row-label">Dimmed opacity</span>
+        <span id="hideDimValue"
+              class="row-value">10%</span>
+      </div>
+      <input type="range"
+             id="hideDimSlider"
+             class="slider"
+             min="0"
+             max="100"
+             step="1"
+             value="10">
+
+      <ul id="ruleList"
+          class="rule-list"></ul>
+    </fieldset>
+  </section>
+
+  <section class="card">
+    <div class="card-header">
+      <div>
+        <h2 class="card-title">Share settings</h2>
+        <div class="card-subtitle">Overlay, hide rules, delay</div>
+      </div>
+    </div>
+
+    <div class="card-body">
+      <div class="button-row">
+        <button type="button"
+                id="settingsExport"
+                class="btn btn-secondary">Export</button>
+        <button type="button"
+                id="settingsImport"
+                class="btn btn-secondary">Import</button>
+      </div>
+      <input type="file"
+             id="settingsImportFile"
+             accept="application/json,.json"
+             hidden>
+      <div id="transferStatus"
+           class="transfer-status"
+           hidden></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-header">
+      <div>
+        <h2 class="card-title">Debug logs</h2>
+        <div id="debugSize"
+             class="card-subtitle">Log: 0.00 MB</div>
+      </div>
+      <label class="switch">
+        <input type="checkbox"
+               id="debugToggle"
+               class="switch-input">
+        <span class="switch-track"><span class="switch-thumb"></span></span>
+      </label>
+    </div>
+
+    <div class="card-body button-row">
       <button type="button"
               id="debugDownload"
-              class="debug-btn">Download</button>
+              class="btn btn-primary">Download</button>
       <button type="button"
               id="debugClear"
-              class="debug-btn">Clear</button>
+              class="btn btn-secondary">Clear</button>
     </div>
-  </div>
+  </section>
+
+  <section class="card">
+    <div class="card-header">
+      <h2 class="card-title">Popup width</h2>
+      <span id="popupWidthValue"
+            class="row-value">300 px</span>
+    </div>
+
+    <div class="card-body">
+      <input type="range"
+             id="popupWidthSlider"
+             class="slider">
+    </div>
+  </section>
+
+  <template id="ruleTemplate">
+    <li class="rule">
+      <div class="rule-line">
+        <input type="text"
+               class="rule-selector"
+               placeholder="CSS selector"
+               spellcheck="false"
+               autocomplete="off">
+        <button type="button"
+                class="rule-delete"
+                title="Delete rule">&times;</button>
+      </div>
+      <div class="rule-line rule-view">
+        <button type="button"
+                class="rule-label"
+                title="Rename"></button>
+        <div class="segmented"
+             title="Shift-click sets all rules">
+          <button type="button"
+                  class="segment"
+                  data-mode="off">Off</button>
+          <button type="button"
+                  class="segment"
+                  data-mode="remove">Remove</button>
+          <button type="button"
+                  class="segment"
+                  data-mode="dim">Dim</button>
+        </div>
+      </div>
+      <div class="rule-line rule-rename"
+           hidden>
+        <input type="text"
+               class="rule-name"
+               placeholder="Rule name"
+               maxlength="60"
+               spellcheck="false"
+               autocomplete="off">
+        <button type="button"
+                class="rule-save">Save</button>
+      </div>
+    </li>
+  </template>
 
   <script src="diagnostics.js"></script>
+  <script src="hide-rules.js"></script>
+  <script src="settings-transfer.js"></script>
   <script src="popup.js"></script>
 </body>
 
