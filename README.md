@@ -15,7 +15,9 @@ A Chrome extension designed to enhance your YouTube viewing experience by automa
 
 ## Debug logs
 
-Tick "Collect debug logs" in the popup: from then on every YouTube tab (and the service worker) records what it sees and does — page lifecycle, the `<video>` state and events, ad/dialog elements appearing in the DOM, the skip button's visibility and click target, input events with `isTrusted`, the page's network requests (paths only), tab events. "Download" saves everything as one JSON file, "Clear" empties the log. The log lives in `chrome.storage.local` and is kept under 8 MB (oldest entries go first). Nothing is recorded while the box is off.
+A ready-made diagnostics engine ([diagnostics.js](diagnostics.js)), shared by the content script, the service worker and the popup. Tick "Collect debug logs" in the popup to turn it on: "Download" saves the log as one JSON file, "Clear" empties it. The log lives in `chrome.storage.local` and is kept under 8 MB (oldest entries go first). Nothing is recorded while the box is off.
+
+On its own the engine records only uncaught errors. To diagnose something, hook onto it: `debugLog(category, message, data)` writes an entry, `onDebugChange(listener)` starts and stops a heavier recorder together with the box. The header of `diagnostics.js` describes the API. A full ad/YouTube recorder that was built on it (page lifecycle, `<video>` events, ad DOM, skip-button visibility, input events, network, tab events) lives in the git history, commit `d46d4d0`.
 
 ## Installation
 

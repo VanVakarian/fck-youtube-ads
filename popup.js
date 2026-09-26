@@ -109,7 +109,7 @@ class PopupManager {
       userAgent: navigator.userAgent,
       settings,
       entryCount: entries.length,
-      fields: 'at: epoch ms; t: ms since the context started (page: since navigation start); src: page:<id> | bg',
+      fields: 'at: epoch ms; t: ms since the context started (page: since navigation start); src: context id',
     };
     const text = [
       '{',

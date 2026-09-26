@@ -4,12 +4,19 @@
 // While the "Collect debug logs" box is on, every context appends entries `{ at, t, src, cat, msg, data }`
 // to chrome.storage.local, and the popup downloads them as one file:
 //  - at: epoch ms; t: ms since the context started (for a page: since navigation start); src: who wrote it
-//    (`page:<id>` for one page load of a tab, `bg` for the service worker);
+//    (a random id per page load / popup open, or whatever setDebugSource gave, e.g. `bg` for the worker);
 //  - entries are buffered and written in batches, each batch under its own key `fckdbg:<first at>:<random>`.
 //    A batch is never rewritten, so many tabs and the worker never race on a read-modify-write;
 //  - one budget guards the quota (10 MB for the whole storage): past the high-water mark the oldest batches
 //    are dropped until the log is back under the low-water mark;
 //  - nothing here may throw into the extension's own flow: a logging failure costs only the entries.
+//
+// Hooking new diagnostics onto it (the engine records nothing by itself except uncaught errors):
+//  - debugLog(cat, msg, data): one entry; a no-op while the box is off, so call it freely. Build `data` only
+//    when it is cheap, or behind isDebugEnabled() when it isn't;
+//  - onDebugChange(listener): start / stop a heavier recorder (listeners, observers) with the box, in whatever
+//    context needs one — a content script, the worker;
+//  - flushDebugLog(): write the buffer now, for a context that may die right after (a closing page, the worker).
 
 const DEBUG_FLAG_KEY = 'debugLogging';
 const DEBUG_CHUNK_PREFIX = 'fckdbg:';
@@ -20,7 +27,7 @@ const DEBUG_LOW_WATER_BYTES = 6 * 1024 * 1024;
 
 // null until the stored flag is read: entries logged before that wait in debugPending, then are kept or dropped
 let debugEnabled = null;
-let debugSource = 'unknown';
+let debugSource = Math.random().toString(36).slice(2, 8);
 let debugPending = [];
 let debugFlushTimer = null;
 const debugChangeListeners = new Set();
